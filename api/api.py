@@ -5,69 +5,71 @@ from psycopg2 import sql
 
 app = Flask(__name__)
 
-# Conexión a PostgreSQL
+# Connection to postgreSQL
 def connect_db():
     try:
-    
-        #Ajustar las siguientes líneas luego de las pruebas
+        #Ajustar las siguientes lineas después de las pruebas
         conn = psycopg2.connect(
             dbname="globant_challenge",
             user="postgres",
-            password="passwordupdated",
+            password="andres123",
             host="localhost",
             port="5432"
         )
-        
         return conn
     except Exception as e:
-    
-        print(f"Error de conexión: {e}")
+        print(f"Connection error: {e}")
         return None
 
-# Función para insertar los datos en la tabla de PostgreSQL
-def insert_data(df, table_name):
+# Route to check if the server is working
+@app.route('/', methods=['GET'])
+def home():
+    return "Flask server is working"
 
+# Function to insert data in the postgreSQL
+def insert_data(df, table_name):
     conn = connect_db()
-    
     if conn:
-    
-        #Eliminar la siguiente línea después de las pruebas
-        print("Conectado!")
+        #Remove the following line after the testing
+        print("Connected!")
         cursor = conn.cursor()
         for _, row in df.iterrows():
-        
             query = sql.SQL("INSERT INTO {} VALUES (%s, %s)").format(sql.Identifier(table_name))
             cursor.execute(query, tuple(row))
         conn.commit()
         cursor.close()
         conn.close()
-        
         return True
-        
     return False
 
-# Ruta para subir el archivo CSV
+# Route to upload the csv using POST
 @app.route('/upload_csv', methods=['POST'])
 def upload_csv():
+
+    if 'file' not in request.files:
+        return jsonify({"error": "There is no file in the field file"}), 400
 
     file = request.files['file']
     
     if file.filename == '':
-            return jsonify({"error": "El nombre del archivo está vacío"}), 400
+            return jsonify({"error": "The file's name is empty"}), 400
 
     if not file:
-        return jsonify({"error": "No se subió ningún archivo"}), 400
+        return jsonify({"error": "No file uploaded"}), 400
     
     try:
-        # Leer el CSV con pandas
-        #Ajustar el siguiente código porque se está leyendo la primera línea como encabezado
+
         df = pd.read_csv(file)
 
-        # Insertar datos en la tabla de PostgreSQL
-        if insert_data(df, 'test_department'):
-            return jsonify({"message": "Datos insertados correctamente"}), 201
+        # Check if the file contains 2 columns
+        if df.shape[1] != 2:
+            return jsonify({"error": "The csv file should contain exactly 2 columns"}), 400
+
+        # Insert data into the postgres table
+        if insert_data(df, 'test_departments'):
+            return jsonify({"message": "Data inserted correctly"}), 201
         else:
-            return jsonify({"error": "Fallo al insertar datos"}), 500
+            return jsonify({"error": "Failed to insert data"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
