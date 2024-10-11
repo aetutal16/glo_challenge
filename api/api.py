@@ -11,6 +11,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Check that the env variables are right
+# print(os.getenv("DB_NAME"))
+
 # Connection toPostgreSQL
 def connect_db():
     try:
@@ -24,12 +27,14 @@ def connect_db():
         return conn
     except Exception as e:
         print(f"Connection Error: {e}")
-        return None
+        return False
 
 # Function to calculate the hash for the file
 def calculate_file_hash(file):
+    print("Working 2!!------------------")
+    file.seek(0) # Ensure we are at the start of the file
     file_content = file.read()
-    file.seek(0) 
+    file.seek(0) # Ensure we are at the start of the file
     return hashlib.sha256(file_content).hexdigest()
 
 # Function to check if the file was already updated using the hash
@@ -67,17 +72,22 @@ def insert_data(df, table_name, num_columns):
         
         try:
             for _, row in df.iterrows():
+                
+                #With this line the error when try to insert null values in postgres is corrected
+                row = row.replace({pd.NA: None, pd.NaT: None}).to_list()
+                #---------------------------------------------
+
                 cursor.execute(query, tuple(row))
             conn.commit()
         except Exception as e:
             print(f"Failed to insert data: {e}")
             conn.rollback()
-            return [False, e]
+            return False
         finally:
             cursor.close()
             conn.close()
-        return [True,'-']
-    return [False, "Couldn't stablish the connection"]
+        return True
+    return False
 
 # Route to check if the server is working
 @app.route('/', methods=['GET'])
@@ -94,7 +104,7 @@ def upload_csv(table_name):
         return jsonify({"error": "No file was uploaded"}), 400
     
     try:
-    
+        print("Working 2!!!!-------")
         file_hash = calculate_file_hash(file)
         
         if is_file_already_uploaded(file_hash):
@@ -110,7 +120,7 @@ def upload_csv(table_name):
         elif table_name == 'fact_hired_employees':
             expected_columns = 5
         else:
-            return jsonify({"error": "Invalid table!"}), 400
+            return jsonify({"error": "Invalid table"}), 400
         
         if df.shape[1] != expected_columns:
             return jsonify({"error": f"The csv file should have {expected_columns} columns"}), 400
@@ -121,9 +131,13 @@ def upload_csv(table_name):
             return jsonify({"message": "Data inserted correctly!"}), 201
         
         else:
-            return jsonify({"error": "Error inserting data!"}), 500
+            return jsonify({"error": "Error inserting data"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    
+    #app.run(debug=True)
+
+    #This line was added because of docker
+    app.run(debug = True, host='0.0.0.0', port=5000)

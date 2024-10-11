@@ -18,28 +18,34 @@ def test_home(client):
 # Test for the csv upload
 def test_upload_csv(client):
     # csv file created to test
-    data = BytesIO(b"col1,col2\nvalue1,value2\nvalue3,value4")
+    data = BytesIO(b"50,col2\n51,value2\n53,value4")
     data.name = 'test_file.csv'
 
-    rv = client.post('/upload_csv/test_departments', 
+    rv = client.post('/upload_csv/dim_departments', 
                      data={'file': (data, 'test_file.csv')},
                      content_type='multipart/form-data')
 
     assert rv.status_code == 201
-    assert b"Data inserted correctly" in rv.data
+    assert b"Data inserted correctly!" in rv.data
 
 # Check if the file was already uploaded
 def test_upload_duplicate_csv(client):
-    data = BytesIO(b"col1,col2\nvalue1,value2\nvalue3,value4")
-    data.name = 'test_file.csv'
 
-    client.post('/upload_csv/test_departments', 
-                data={'file': (data, 'test_file.csv')},
+    #Create the first instance for the file
+    data1 = BytesIO(b"100,col2\n101,value2\n102,value4")
+    data1.name = 'test_file.csv'
+
+    client.post('/upload_csv/dim_departments', 
+                data={'file': (data1, 'test_file.csv')},
                 content_type='multipart/form-data')
 
+    # Create a new instance of BytesIO for the second upload
+    data2 = BytesIO(b"100,col2\n101,value2\n102,value4")
+    data2.name = 'test_file.csv'
+
     # Upload the same file again
-    rv = client.post('/upload_csv/test_departments', 
-                     data={'file': (data, 'test_file.csv')},
+    rv = client.post('/upload_csv/dim_departments', 
+                     data={'file': (data2, 'test_file.csv')},
                      content_type='multipart/form-data')
 
     assert rv.status_code == 400
