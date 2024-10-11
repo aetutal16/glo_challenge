@@ -1,0 +1,11 @@
+----------------------------------------
+--Commands to build the docker, 
+--Important! the docker service should be running!
+----------------------------------------
+
+From the path where is the docker file, execute the following commands in cmd or cli.
+
+docker build -t glo_challenge .
+
+docker run -p 5000:5000 glo_challenge
+
