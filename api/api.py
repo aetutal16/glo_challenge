@@ -31,7 +31,7 @@ def connect_db():
 
 # Function to calculate the hash for the file
 def calculate_file_hash(file):
-    print("Working 2!!------------------")
+    #print("Working 2!!------------------")
     file.seek(0) # Ensure we are at the start of the file
     file_content = file.read()
     file.seek(0) # Ensure we are at the start of the file
@@ -70,15 +70,21 @@ def insert_data(df, table_name, num_columns):
         placeholders = ', '.join(['%s'] * num_columns)
         query = sql.SQL(f"INSERT INTO {{}} VALUES ({placeholders})").format(sql.Identifier(table_name))
         
-        try:
-            for _, row in df.iterrows():
-                
-                #With this line the error when try to insert null values in postgres is corrected
-                row = row.replace({pd.NA: None, pd.NaT: None}).to_list()
-                #---------------------------------------------
+        # Convert the DataFrame rows to a list of tuples for batch insertion
+        data = [tuple(row.replace({pd.NA: None, pd.NaT: None}).to_list()) for _, row in df.iterrows()]
 
-                cursor.execute(query, tuple(row))
+        try:
+
+            # Old code, inserts the data row by row
+            #for _, row in df.iterrows():
+            #    
+            #    cursor.execute(query, tuple(row))
+            
+            # New code, Inserts rows in batches according to the requirement
+            cursor.executemany(query, data)
+
             conn.commit()
+
         except Exception as e:
             print(f"Failed to insert data: {e}")
             conn.rollback()
@@ -104,7 +110,8 @@ def upload_csv(table_name):
         return jsonify({"error": "No file was uploaded"}), 400
     
     try:
-        print("Working 2!!!!-------")
+        #print("Working 2!!!!-------")
+        
         file_hash = calculate_file_hash(file)
         
         if is_file_already_uploaded(file_hash):
@@ -112,6 +119,10 @@ def upload_csv(table_name):
         
         df = pd.read_csv(file, header = None)
         
+        #Check that the file doesn't exceed the maximum number of rows
+        if len(df) > 1000:
+            return jsonify({"error": "Batch limit exceeded. You can only insert up to 1000 rows at a time."}), 400
+
         # Check the number of columns according to the table
         if table_name == 'dim_departments':
             expected_columns = 2
