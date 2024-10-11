@@ -107,7 +107,7 @@ def upload_csv(table_name):
     file = request.files.get('file')
     
     if not file:
-        return jsonify({"error": "No file was uploaded"}), 400
+        return jsonify({"error": "No file was selected for upload, please upload a file"}), 400
     
     try:
         #print("Working 2!!!!-------")
@@ -115,13 +115,13 @@ def upload_csv(table_name):
         file_hash = calculate_file_hash(file)
         
         if is_file_already_uploaded(file_hash):
-            return jsonify({"error": "The file has already been uploaded before"}), 400
+            return jsonify({"error": "The file had already been uploaded before"}), 400
         
         df = pd.read_csv(file, header = None)
         
         #Check that the file doesn't exceed the maximum number of rows
         if len(df) > 1000:
-            return jsonify({"error": "Batch limit exceeded. You can only insert up to 1000 rows at a time."}), 400
+            return jsonify({"error": "Batch limit exceeded. You can only insert up to 1000 rows at a time"}), 400
 
         # Check the number of columns according to the table
         if table_name == 'dim_departments':
@@ -131,7 +131,7 @@ def upload_csv(table_name):
         elif table_name == 'fact_hired_employees':
             expected_columns = 5
         else:
-            return jsonify({"error": "Invalid table"}), 400
+            return jsonify({"error": "Invalid table. This table doesn't exist in the DB"}), 400
         
         if df.shape[1] != expected_columns:
             return jsonify({"error": f"The csv file should have {expected_columns} columns"}), 400
@@ -142,7 +142,7 @@ def upload_csv(table_name):
             return jsonify({"message": "Data inserted correctly!"}), 201
         
         else:
-            return jsonify({"error": "Error inserting data"}), 500
+            return jsonify({"error": "Error inserting data in the DB"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

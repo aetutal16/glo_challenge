@@ -39,7 +39,7 @@ def test_upload_csv_2(client):
                      content_type='multipart/form-data')
 
     assert rv.status_code == 400
-    assert b"Invalid table" in rv.data
+    assert b"Invalid table. This table doesn't exist in the DB" in rv.data
 
 # Test for the csv upload, a file with the wrong structure for the table
 def test_upload_csv_3(client):
@@ -75,4 +75,4 @@ def test_upload_duplicate_csv(client):
                      content_type='multipart/form-data')
 
     assert rv.status_code == 400
-    assert b"The file has already been uploaded before" in rv.data
+    assert b"The file had already been uploaded before" in rv.data
