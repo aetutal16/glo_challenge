@@ -3,7 +3,7 @@
 #### Author: Andrés Tuta
 
 ---
-#### Here you can find the folders with the python code, sql, documentation and more:
+#### Here you will find the folders with the python code, sql, documentation and more:
 
 ## Folders
 
