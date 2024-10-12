@@ -28,6 +28,32 @@ def test_upload_csv(client):
     assert rv.status_code == 201
     assert b"Data inserted correctly!" in rv.data
 
+# Test for the csv upload, table incorrect
+def test_upload_csv_2(client):
+    # csv file created to test
+    data = BytesIO(b"1000,col2\n1001,value2\n1002,value4")
+    data.name = 'test_file.csv'
+
+    rv = client.post('/upload_csv/dim_depar', 
+                     data={'file': (data, 'test_file.csv')},
+                     content_type='multipart/form-data')
+
+    assert rv.status_code == 400
+    assert b"Invalid table. This table doesn't exist in the DB" in rv.data
+
+# Test for the csv upload, a file with the wrong structure for the table
+def test_upload_csv_3(client):
+    # csv file created to test
+    data = BytesIO(b"1000,col2,col3\n1001,value2,value3\n1002,value4,value5")
+    data.name = 'test_file.csv'
+
+    rv = client.post('/upload_csv/dim_departments', 
+                     data={'file': (data, 'test_file.csv')},
+                     content_type='multipart/form-data')
+
+    assert rv.status_code == 400
+    assert b"The csv file should have 2 columns" in rv.data
+
 # Check if the file was already uploaded
 def test_upload_duplicate_csv(client):
 
@@ -49,4 +75,4 @@ def test_upload_duplicate_csv(client):
                      content_type='multipart/form-data')
 
     assert rv.status_code == 400
-    assert b"The file has already been uploaded before" in rv.data
+    assert b"The file had already been uploaded before" in rv.data
