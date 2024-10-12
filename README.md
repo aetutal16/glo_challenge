@@ -1,4 +1,4 @@
-### Globant’s Data Engineering Coding Challenge
+
 ---
 #### Author: Andrés Tuta
 
